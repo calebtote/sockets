@@ -16,7 +16,9 @@
 
 #define PORT "3490" // the port client will be connecting to 
 
-#define MAXDATASIZE 100 // max number of bytes we can get at once 
+#define MAXDATASIZE 100 // max number of bytes we can get at once
+#define CLOSE_CONNECTION "exit99"	// defined code for client connection termination notification
+bool gameStarted = false;
 
 // basic structure for messages
 struct msgstruct {
@@ -34,10 +36,34 @@ void *get_in_addr(struct sockaddr *sa)
 	return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
+int getNextMsg(int sockfd, sockaddr_storage their_addr)
+{
+	char buf[MAXDATASIZE];
+	int numbytes;
+
+	memset(&buf[0], 0, sizeof(buf));
+
+	//socklen_t addr_len = sizeof their_addr;
+	if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0/*, (struct sockaddr *)&their_addr, &addr_len*/)) == -1) {
+		perror("recv");
+		exit(1);
+	}
+	//std::cout << "number of bytes: " <<  numbytes << std::endl;
+
+	std::string test(buf);
+	if (test == "exit99"){
+		close(sockfd);
+		return -1;
+	}
+
+	printf("%s\n",buf);
+	return 0;
+}
+
 int main(int argc, char *argv[])
 {
-	int sockfd, numbytes;  
-	char buf[MAXDATASIZE];
+	int sockfd;
+
 	struct addrinfo hints, *servinfo, *p;
 	struct sockaddr_storage their_addr;
 	int rv;
@@ -84,27 +110,16 @@ int main(int argc, char *argv[])
 	printf("client: connecting to %s\n", s);
 
 	while(1){
-		char response[100];
-		memset(&buf[0], 0, sizeof(buf));
-		//buf[numbytes] = '\0';
-		socklen_t addr_len = sizeof their_addr;
-		if ((numbytes = recvfrom(sockfd, buf, MAXDATASIZE-1, 0, (struct sockaddr *)&their_addr, &addr_len)) == -1) {
-		    perror("recv");
-		    exit(1);
-		}
-		
-		if (strcmp(buf, "exit 99") == 0){
-			close(sockfd);
-			return 0;
-		}
-		
-		printf("%s\n",buf);
+		getNextMsg(sockfd, their_addr);
 
+		char response[100];
 		std::cin >> response;
 		struct msgstruct message;
 		message.send_data = response;
 		message.length = strlen(message.send_data);
-		int n	= sendto(sockfd, response, strlen(response), 0, p->ai_addr, p->ai_addrlen);
+
+		int n = send(sockfd, response, strlen(response), 0/*, p->ai_addr, p->ai_addrlen*/);
+		getNextMsg(sockfd, their_addr);
 	}
 }
 

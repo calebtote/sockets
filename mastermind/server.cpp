@@ -20,7 +20,7 @@
 
 #define BACKLOG 10	// maximum client backlog
 #define MAXDATASIZE 200	// maximum data size
-#define CLOSE_CONNECTION "exit 99"	// defined message for client connection termination notification
+#define CLOSE_CONNECTION "exit99"	// defined code for client connection termination notification
 char THECODE[10];
 
 typedef enum {RED,GREEN,BLUE,YELLOW,ORANGE} color;
@@ -177,7 +177,7 @@ int StartMasterMind(int client, sockaddr_storage addr_in)
 	char buf[MAXDATASIZE];
 	buf[MAXDATASIZE] = '\0';
 
-	sendMsg(client, "Welcome to ... M-A-S-T-E-R-M-I-N-D.\nThe game has begun.\n");
+	sendMsg(client, "Welcome to ... M-A-S-T-E-R-M-I-N-D.\nThe game has begun.\nPlease enter a guess:");
 
 	std::vector<color> ServerCodeColorVector;
 
@@ -211,8 +211,6 @@ int StartMasterMind(int client, sockaddr_storage addr_in)
 		std::vector<int> correctColor;
 
 		bool exclude[4] = {false};
-
-		sendMsg(client, "Please enter your guess: ");
 		
 		addr_len = sizeof their_addr;
 		recv(client, buf, MAXDATASIZE-1, 0/*, (struct sockaddr *)&their_addr, &addr_len*/);
@@ -264,6 +262,8 @@ int StartMasterMind(int client, sockaddr_storage addr_in)
 			close(client);
 			return 0;
 		}
+
+		sendMsg(client, "Please enter your next guess: ");
 	}	
  
 	char realCode[10] = "";
